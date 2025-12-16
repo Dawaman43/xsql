@@ -49,14 +49,26 @@ else
   exit 1
 fi
 
-if ! echo "$PATH" | grep -q "$HOME/.cargo/bin"; then
-  info "Adding $HOME/.cargo/bin to your PATH in ~/.profile"
-  printf "\n# xsql installed: add cargo bin to PATH\nexport PATH=\"$HOME/.cargo/bin:\$PATH\"\n" >> "$HOME/.profile"
-  # try to update current shell PATH
-  export PATH="$HOME/.cargo/bin:$PATH"
-fi
 
-ok "xsql installed successfully"
-printf "%b\n" "\nRun the tool: ${BOLD}${GREEN}xsql --help${RESET}\n"
+if ! echo "$PATH" | grep -q "$HOME/.cargo/bin"; then
+  # prefer zshrc, then bashrc, then profile
+  if [ -f "$HOME/.zshrc" ]; then
+    rc="$HOME/.zshrc"
+  elif [ -f "$HOME/.bashrc" ]; then
+    rc="$HOME/.bashrc"
+  else
+    rc="$HOME/.profile"
+  fi
+  info "Adding $HOME/.cargo/bin to your PATH in $rc"
+  if ! grep -q "$HOME/.cargo/bin" "$rc" 2>/dev/null; then
+    printf "\n# xsql installed: add cargo bin to PATH\nexport PATH=\"$HOME/.cargo/bin:\$PATH\"\n" >> "$rc"
+  fi
+  # advise how to enable in current shell
+  ok "xsql installed successfully"
+  printf "%b\n" "To use xsql in your current shell, run:\n  ${BOLD}${GREEN}export PATH=\"$HOME/.cargo/bin:\$PATH\"${RESET}\nOr source your rc: ${BOLD}${GREEN}source $rc${RESET}\n"
+else
+  ok "xsql installed successfully (already on PATH)"
+  printf "%b\n" "Run: ${BOLD}${GREEN}xsql --help${RESET}\n"
+fi
 
 exit 0
