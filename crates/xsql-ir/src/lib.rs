@@ -33,5 +33,5 @@ pub enum DataType {
 
 // New IR v2 is provided in a separate module to preserve backwards compatibility
 // with existing parsers and emitters while enabling a richer schema representation.
-pub mod v2;
 pub mod alter;
+pub mod v2;
