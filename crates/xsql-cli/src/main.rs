@@ -655,7 +655,11 @@ fn main() {
                 }
             }
         }
-        Some(Command::V2Emit { input, dialect, strict }) => {
+        Some(Command::V2Emit {
+            input,
+            dialect,
+            strict,
+        }) => {
             let json = fs::read_to_string(&input).expect("failed to read input");
             let schema: xsql_ir::v2::V2Schema = serde_json::from_str(&json).expect("parse v2 json");
             // determine target dialect string for emitter
@@ -690,8 +694,10 @@ fn main() {
         Some(Command::V2Diff { old, new, json }) => {
             let sold = fs::read_to_string(&old).expect("failed to read old");
             let snew = fs::read_to_string(&new).expect("failed to read new");
-            let old_schema: xsql_ir::v2::V2Schema = serde_json::from_str(&sold).expect("parse old v2 json");
-            let new_schema: xsql_ir::v2::V2Schema = serde_json::from_str(&snew).expect("parse new v2 json");
+            let old_schema: xsql_ir::v2::V2Schema =
+                serde_json::from_str(&sold).expect("parse old v2 json");
+            let new_schema: xsql_ir::v2::V2Schema =
+                serde_json::from_str(&snew).expect("parse new v2 json");
 
             let diff = xsql_ir::v2_diff::diff_v2_schemas(&old_schema, &new_schema);
 
@@ -736,7 +742,10 @@ fn main() {
                     }
                 }
 
-                if diff.added_tables.is_empty() && diff.removed_tables.is_empty() && diff.changed_tables.is_empty() {
+                if diff.added_tables.is_empty()
+                    && diff.removed_tables.is_empty()
+                    && diff.changed_tables.is_empty()
+                {
                     println!("✔ xsql: v2 schemas are equivalent");
                 }
             }

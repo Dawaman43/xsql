@@ -41,7 +41,11 @@ pub fn diff_v2_schemas(old: &V2Schema, new: &V2Schema) -> V2Diff {
     let old_tables: BTreeSet<_> = old_map.keys().cloned().collect();
     let new_tables: BTreeSet<_> = new_map.keys().cloned().collect();
 
-    let added_tables: Vec<_> = new_tables.difference(&old_tables).cloned().map(|n| new_map.get(&n).unwrap().clone()).collect();
+    let added_tables: Vec<_> = new_tables
+        .difference(&old_tables)
+        .cloned()
+        .map(|n| new_map.get(&n).unwrap().clone())
+        .collect();
     let removed_tables: Vec<_> = old_tables.difference(&new_tables).cloned().collect();
 
     let mut changed_tables = Vec::new();
@@ -64,7 +68,11 @@ pub fn diff_v2_schemas(old: &V2Schema, new: &V2Schema) -> V2Diff {
         let a_names: BTreeSet<_> = a_cols.keys().cloned().collect();
         let b_names: BTreeSet<_> = b_cols.keys().cloned().collect();
 
-        let added_cols: Vec<_> = b_names.difference(&a_names).cloned().map(|n| b_cols.get(&n).unwrap().clone()).collect();
+        let added_cols: Vec<_> = b_names
+            .difference(&a_names)
+            .cloned()
+            .map(|n| b_cols.get(&n).unwrap().clone())
+            .collect();
         let removed_cols: Vec<_> = a_names.difference(&b_names).cloned().collect();
 
         let mut changed_cols = Vec::new();
@@ -82,7 +90,11 @@ pub fn diff_v2_schemas(old: &V2Schema, new: &V2Schema) -> V2Diff {
 
         let pk_changed = a.primary_key != b.primary_key;
 
-        if !added_cols.is_empty() || !removed_cols.is_empty() || !changed_cols.is_empty() || pk_changed {
+        if !added_cols.is_empty()
+            || !removed_cols.is_empty()
+            || !changed_cols.is_empty()
+            || pk_changed
+        {
             changed_tables.push(TableChange {
                 name: tname.clone(),
                 added_columns: added_cols,
