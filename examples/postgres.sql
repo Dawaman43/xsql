@@ -1,0 +1,15 @@
+-- Example Postgres schema for xsql
+CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  username VARCHAR(150) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE posts (
+  id SERIAL PRIMARY KEY,
+  user_id INT NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  body TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
