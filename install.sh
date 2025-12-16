@@ -90,8 +90,30 @@ if ! echo "$PATH" | grep -q "$HOME/.cargo/bin"; then
   if ! grep -q "$HOME/.cargo/bin" "$rc" 2>/dev/null; then
     printf "\n# xsql installed: add cargo bin to PATH\nexport PATH=\"$HOME/.cargo/bin:\$PATH\"\n" >> "$rc"
   fi
-  ok "xsql installed successfully"
-  printf "%b\n" "To use xsql in your current shell, run:\n  ${BOLD}${GREEN}export PATH=\"$HOME/.cargo/bin:\$PATH\"${RESET}\nOr source your rc: ${BOLD}${GREEN}source $rc${RESET}\n"
+  # try to move binary to /usr/local/bin so it's immediately available
+  BINPATH="$HOME/.cargo/bin/xsql"
+  if [ -f "$BINPATH" ]; then
+    if [ -w /usr/local/bin ]; then
+      mv "$BINPATH" /usr/local/bin/ && chmod 755 /usr/local/bin/xsql && ok "xsql moved to /usr/local/bin and is ready to use"
+    elif command -v sudo >/dev/null 2>&1; then
+      info "Moving xsql to /usr/local/bin (may ask for your password)..."
+      if sudo mv "$BINPATH" /usr/local/bin/ && sudo chmod 755 /usr/local/bin/xsql; then
+        ok "xsql installed to /usr/local/bin and is ready to use"
+        # removed PATH change since system bin is used
+        exit 0
+      else
+        warn "Failed to move binary to /usr/local/bin; leaving in $BINPATH"
+        ok "xsql installed successfully"
+        printf "%b\n" "To use xsql in your current shell, run:\n  ${BOLD}${GREEN}export PATH=\"$HOME/.cargo/bin:\$PATH\"${RESET}\nOr source your rc: ${BOLD}${GREEN}source $rc${RESET}\n"
+      fi
+    else
+      ok "xsql installed successfully"
+      printf "%b\n" "To use xsql in your current shell, run:\n  ${BOLD}${GREEN}export PATH=\"$HOME/.cargo/bin:\$PATH\"${RESET}\nOr source your rc: ${BOLD}${GREEN}source $rc${RESET}\n"
+    fi
+  else
+    ok "xsql installed successfully"
+    printf "%b\n" "Run: ${BOLD}${GREEN}xsql --help${RESET}\n"
+  fi
 else
   ok "xsql installed successfully (already on PATH)"
   printf "%b\n" "Run: ${BOLD}${GREEN}xsql --help${RESET}\n"
