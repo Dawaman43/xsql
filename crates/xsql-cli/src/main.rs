@@ -321,7 +321,13 @@ pub(crate) fn convert_dir(
     input_dir: &Path,
     output_dir: &Path,
 ) -> Result<(), String> {
-    convert_dir_with_options(from, to, input_dir, output_dir, ConvertOptions { strict: false })
+    convert_dir_with_options(
+        from,
+        to,
+        input_dir,
+        output_dir,
+        ConvertOptions { strict: false },
+    )
 }
 
 fn convert_dir_with_options(
@@ -384,7 +390,12 @@ fn convert_args_to_paths(args: &ConvertArgs) -> Result<(PathBuf, PathBuf), Strin
     Ok((PathBuf::from(input), PathBuf::from(output)))
 }
 
-fn lint_schema_file(from: Dialect, to: Option<Dialect>, input: &Path, strict: bool) -> Result<(), String> {
+fn lint_schema_file(
+    from: Dialect,
+    to: Option<Dialect>,
+    input: &Path,
+    strict: bool,
+) -> Result<(), String> {
     let sql = fs::read_to_string(input)
         .map_err(|e| format!("failed to read {}: {e}", input.display()))?;
     let schema = parse_schema(from, &sql).map_err(|e| format!("parse error: {e}"))?;
@@ -413,10 +424,10 @@ fn lint_schema_file(from: Dialect, to: Option<Dialect>, input: &Path, strict: bo
 }
 
 fn diff_schemas(dialect: Dialect, old: &Path, new: &Path) -> Result<(), String> {
-    let sold = fs::read_to_string(old)
-        .map_err(|e| format!("failed to read {}: {e}", old.display()))?;
-    let snew = fs::read_to_string(new)
-        .map_err(|e| format!("failed to read {}: {e}", new.display()))?;
+    let sold =
+        fs::read_to_string(old).map_err(|e| format!("failed to read {}: {e}", old.display()))?;
+    let snew =
+        fs::read_to_string(new).map_err(|e| format!("failed to read {}: {e}", new.display()))?;
     let old_schema = parse_schema(dialect, &sold).map_err(|e| format!("parse old: {e}"))?;
     let new_schema = parse_schema(dialect, &snew).map_err(|e| format!("parse new: {e}"))?;
 
@@ -488,7 +499,11 @@ fn diff_schemas(dialect: Dialect, old: &Path, new: &Path) -> Result<(), String> 
         }
 
         let pk_changed = a.primary_key != b.primary_key;
-        if added_cols.is_empty() && removed_cols.is_empty() && changed_cols.is_empty() && !pk_changed {
+        if added_cols.is_empty()
+            && removed_cols.is_empty()
+            && changed_cols.is_empty()
+            && !pk_changed
+        {
             continue;
         }
 
@@ -557,7 +572,9 @@ fn main() {
                 }
             };
 
-            let opts = ConvertOptions { strict: args.strict };
+            let opts = ConvertOptions {
+                strict: args.strict,
+            };
 
             let result = if input.is_dir() {
                 convert_dir_with_options(from, to, &input, &output, opts)

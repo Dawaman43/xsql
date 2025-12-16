@@ -1,38 +1,37 @@
-use xsql_emitter::v2::{emit_mysql_v2, emit_sqlite_v2, emit_postgres_v2};
+use xsql_emitter::v2::{emit_mysql_v2, emit_postgres_v2, emit_sqlite_v2};
 use xsql_ir::v2::*;
 
 fn example_schema() -> V2Schema {
     use std::collections::HashMap;
     V2Schema {
-        tables: vec![
-            V2Table {
-                name: "users".to_string(),
-                columns: vec![
-                    V2Column {
-                        name: "id".to_string(),
-                        data_type: V2DataType::Integer { bits: Some(64) },
-                        constraints: vec![ColumnConstraint::NotNull, ColumnConstraint::AutoIncrement],
-                        annotations: vec![],
-                    },
-                    V2Column {
-                        name: "name".to_string(),
-                        data_type: V2DataType::Varchar(Some(100)),
-                        constraints: vec![ColumnConstraint::NotNull],
-                        annotations: vec![],
-                    },
-                    V2Column {
-                        name: "email".to_string(),
-                        data_type: V2DataType::Varchar(Some(255)),
-                        constraints: vec![],
-                        annotations: vec![],
-                    },
-                ],
-                primary_key: Some(vec!["id".to_string()]),
-                constraints: vec![
-                    Constraint::Unique { name: Some("uq_email".to_string()), columns: vec!["email".to_string()] },
-                ],
-            },
-        ],
+        tables: vec![V2Table {
+            name: "users".to_string(),
+            columns: vec![
+                V2Column {
+                    name: "id".to_string(),
+                    data_type: V2DataType::Integer { bits: Some(64) },
+                    constraints: vec![ColumnConstraint::NotNull, ColumnConstraint::AutoIncrement],
+                    annotations: vec![],
+                },
+                V2Column {
+                    name: "name".to_string(),
+                    data_type: V2DataType::Varchar(Some(100)),
+                    constraints: vec![ColumnConstraint::NotNull],
+                    annotations: vec![],
+                },
+                V2Column {
+                    name: "email".to_string(),
+                    data_type: V2DataType::Varchar(Some(255)),
+                    constraints: vec![],
+                    annotations: vec![],
+                },
+            ],
+            primary_key: Some(vec!["id".to_string()]),
+            constraints: vec![Constraint::Unique {
+                name: Some("uq_email".to_string()),
+                columns: vec!["email".to_string()],
+            }],
+        }],
         metadata: HashMap::new(),
     }
 }

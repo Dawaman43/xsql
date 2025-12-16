@@ -5,8 +5,8 @@
 //! non-breaking path for tooling that needs constraints, foreign keys, unique
 //! constraints, and checks for linting, diffing, and ALTER generation.
 
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct V2Schema {

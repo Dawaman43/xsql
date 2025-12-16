@@ -7,8 +7,10 @@ use crate::v2::V2Schema;
 pub fn diff_to_alter_sql(old: &V2Schema, new: &V2Schema) -> Vec<String> {
     let mut out = Vec::new();
 
-    let old_names: std::collections::BTreeSet<_> = old.tables.iter().map(|t| t.name.clone()).collect();
-    let new_names: std::collections::BTreeSet<_> = new.tables.iter().map(|t| t.name.clone()).collect();
+    let old_names: std::collections::BTreeSet<_> =
+        old.tables.iter().map(|t| t.name.clone()).collect();
+    let new_names: std::collections::BTreeSet<_> =
+        new.tables.iter().map(|t| t.name.clone()).collect();
 
     for added in new_names.difference(&old_names) {
         // Placeholder: in future we will render full CREATE TABLE; for now emit simple marker.
