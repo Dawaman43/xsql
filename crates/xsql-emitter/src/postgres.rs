@@ -29,6 +29,10 @@ pub fn emit_postgres(schema: &Schema) -> String {
                 out.push_str(" NOT NULL");
             }
 
+            if let Some(default) = &col.default {
+                out.push_str(&format!(" DEFAULT {}", default));
+            }
+
             if i < table.columns.len() - 1 || table.primary_key.is_some() {
                 out.push(',');
             }

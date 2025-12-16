@@ -19,7 +19,7 @@ pub struct Column {
     pub default: Option<String>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DataType {
     Int,
     BigInt,
@@ -30,3 +30,8 @@ pub enum DataType {
     Text,
     Timestamp,
 }
+
+// New IR v2 is provided in a separate module to preserve backwards compatibility
+// with existing parsers and emitters while enabling a richer schema representation.
+pub mod v2;
+pub mod alter;

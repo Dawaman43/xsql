@@ -6,30 +6,44 @@ pub fn emit_sqlite(schema: &Schema) -> String {
     for table in &schema.tables {
         out.push_str(&format!("CREATE TABLE {} (\n", table.name));
 
-        for (i, col) in table.columns.iter().enumerate() {
+        let mut defs: Vec<String> = Vec::new();
+        let has_autoinc_pk = table.columns.iter().any(|c| c.auto_increment);
+
+        for col in &table.columns {
             let ty = match col.data_type {
                 DataType::Boolean => "INTEGER",
                 DataType::Int | DataType::BigInt => "INTEGER",
+                DataType::Float | DataType::Double => "REAL",
                 _ => "TEXT",
             };
 
-            out.push_str(&format!("  {} {}", col.name, ty));
+            let mut line = format!("  {} {}", col.name, ty);
 
             if col.auto_increment {
-                out.push_str(" PRIMARY KEY AUTOINCREMENT");
+                line.push_str(" PRIMARY KEY AUTOINCREMENT");
             }
 
             if !col.nullable {
-                out.push_str(" NOT NULL");
+                line.push_str(" NOT NULL");
             }
 
-            if i < table.columns.len() - 1 {
-                out.push(',');
+            if let Some(default) = &col.default {
+                line.push_str(&format!(" DEFAULT {}", default));
             }
-            out.push('\n');
+
+            defs.push(line);
         }
 
-        out.push_str(");\n\n");
+        if !has_autoinc_pk {
+            if let Some(pk) = &table.primary_key {
+                if !pk.is_empty() {
+                    defs.push(format!("  PRIMARY KEY ({})", pk.join(", ")));
+                }
+            }
+        }
+
+        out.push_str(&defs.join(",\n"));
+        out.push_str("\n);\n\n");
     }
 
     out

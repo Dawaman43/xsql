@@ -58,6 +58,35 @@ xsql --help
 
 ## Design
 
+## IR v2 (experimental)
+
+IR v2 is an opt-in richer intermediate representation for schema portability. It captures:
+
+- Table-level constraints (`UNIQUE`, `FOREIGN KEY`, `CHECK`)
+- Column-level constraints (`NOT NULL`, `DEFAULT`, `AUTO_INCREMENT`/identity)
+- Portable data types (`Integer`, `Boolean`, `Float`, `Varchar`, `Text`, `Timestamp`)
+- Free-form `metadata` and `annotations` for tools to add hints
+
+Parsers can output V2 JSON and emitters can read V2 JSON to produce dialect SQL.
+This is useful for round-tripping, linting, and future ALTER-generation.
+
+CLI examples (v2):
+
+```bash
+# Parse a Postgres SQL file into V2 JSON
+xsql v2-parse schema.sql --dialect postgres > schema.v2.json
+
+# Emit MySQL SQL from a V2 JSON file
+xsql v2-emit schema.v2.json --dialect mysql > schema.mysql.sql
+```
+
+Notes and limitations:
+
+- V2 is still experimental: some vendor-specific types and complex CHECK expressions
+  may be preserved as `Custom`/`annotations` and not always round-trippable.
+- ALTER-statement generation is planned; currently emitters output `CREATE TABLE`.
+
+
 ### Architecture
 
 `xsql` uses a small intermediate representation (IR) to separate parsing from emitting:
