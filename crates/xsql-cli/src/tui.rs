@@ -1,4 +1,9 @@
-#![allow(clippy::collapsible_if, clippy::redundant_closure, deprecated, dead_code)]
+#![allow(
+    clippy::collapsible_if,
+    clippy::redundant_closure,
+    deprecated,
+    dead_code
+)]
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -279,10 +284,7 @@ pub fn run_tui() -> Result<(), String> {
                         model.screen = Screen::PickInput;
                     }
                     KeyCode::Char('o') | KeyCode::Char('O') => {
-                        let start = model
-                            .output_dir
-                            .clone()
-                            .unwrap_or_else(find_project_root);
+                        let start = model.output_dir.clone().unwrap_or_else(find_project_root);
                         model.picker =
                             Some(Picker::new_at(nearest_existing_dir(&start), PickKind::Dir));
                         model.screen = Screen::PickOutputDir;

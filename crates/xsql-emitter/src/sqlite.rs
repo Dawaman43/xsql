@@ -34,7 +34,10 @@ pub fn emit_sqlite(schema: &Schema) -> String {
             defs.push(line);
         }
 
-        if !has_autoinc_pk && let Some(pk) = &table.primary_key && !pk.is_empty() {
+        if !has_autoinc_pk
+            && let Some(pk) = &table.primary_key
+            && !pk.is_empty()
+        {
             defs.push(format!("  PRIMARY KEY ({})", pk.join(", ")));
         }
 
