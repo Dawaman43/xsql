@@ -30,6 +30,7 @@ enum Screen {
     Main,
     PickInput,
     PickOutputDir,
+    ConfirmDir,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -129,6 +130,7 @@ struct Model {
     status: String,
     picker: Option<Picker>,
     summary: Vec<(PathBuf, PathBuf)>,
+    pending_dir_selection: Option<PathBuf>,
 }
 
 impl Default for Model {
@@ -144,6 +146,7 @@ impl Default for Model {
             status: "Ready".to_string(),
             picker: None,
             summary: Vec::new(),
+            pending_dir_selection: None,
         }
     }
 }
@@ -325,7 +328,7 @@ pub fn run_tui() -> Result<(), String> {
             }
         }
 
-        // inner picker handling
+        // inner picker and confirm handling
         match model.screen {
             Screen::PickInput | Screen::PickOutputDir => {
                 if let Some(ref mut picker) = model.picker {
@@ -341,20 +344,81 @@ pub fn run_tui() -> Result<(), String> {
                                 KeyCode::Up => picker.move_up(),
                                 KeyCode::Down => picker.move_down(),
                                 KeyCode::Left => picker.go_parent(),
-                                KeyCode::Right | KeyCode::Enter => picker.enter(),
+                                KeyCode::Right | KeyCode::Enter => {
+                                    // If selected is a file and picking files, accept it on Enter
+                                    if let Some(idx) = picker.state.selected() {
+                                        if let Some(p) = picker.items.get(idx) {
+                                            if p.is_file() {
+                                                if model.screen == Screen::PickInput {
+                                                    model.input = Some(p.clone());
+                                                    model.picker = None;
+                                                    model.screen = Screen::Main;
+                                                    maybe_focus_run(&mut model);
+                                                    update_summary(&mut model);
+                                                    continue;
+                                                }
+                                            }
+                                        }
+                                    }
+                                    picker.enter()
+                                }
                                 KeyCode::Char('s') | KeyCode::Char('S') => {
                                     // select
                                     if let Some(sel) = picker.selected_path() {
-                                        match model.screen {
-                                            Screen::PickInput => model.input = Some(sel),
-                                            Screen::PickOutputDir => model.output_dir = Some(sel),
-                                            _ => {}
+                                        if sel.is_dir() {
+                                            // confirm whether to convert entire folder or pick individual files
+                                            model.pending_dir_selection = Some(sel.clone());
+                                            model.picker = None;
+                                            model.screen = Screen::ConfirmDir;
+                                        } else {
+                                            match model.screen {
+                                                Screen::PickInput => model.input = Some(sel),
+                                                Screen::PickOutputDir => {
+                                                    model.output_dir = Some(sel)
+                                                }
+                                                _ => {}
+                                            }
+                                            model.picker = None;
+                                            model.screen = Screen::Main;
+                                            maybe_focus_run(&mut model);
+                                            update_summary(&mut model);
                                         }
-                                        model.picker = None;
-                                        model.screen = Screen::Main;
-                                        maybe_focus_run(&mut model);
-                                        update_summary(&mut model);
                                     }
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
+                } else {
+                    model.screen = Screen::Main;
+                }
+            }
+            Screen::ConfirmDir => {
+                if let Some(dir) = model.pending_dir_selection.clone() {
+                    if crossterm::event::poll(Duration::from_millis(10))
+                        .map_err(|e| e.to_string())?
+                    {
+                        if let Event::Key(k) = event::read().map_err(|e| e.to_string())? {
+                            match k.code {
+                                KeyCode::Char('a') | KeyCode::Char('A') => {
+                                    // select entire folder -> set input dir and default output to <dir>/xsql
+                                    model.input = Some(dir.clone());
+                                    model.output_dir = Some(dir.join("xsql"));
+                                    model.pending_dir_selection = None;
+                                    model.screen = Screen::Main;
+                                    maybe_focus_run(&mut model);
+                                    update_summary(&mut model);
+                                }
+                                KeyCode::Char('f') | KeyCode::Char('F') => {
+                                    // pick individual files inside this folder
+                                    model.picker =
+                                        Some(Picker::new_at(dir.clone(), PickKind::File));
+                                    model.pending_dir_selection = None;
+                                    model.screen = Screen::PickInput;
+                                }
+                                KeyCode::Char('q') | KeyCode::Esc => {
+                                    model.pending_dir_selection = None;
+                                    model.screen = Screen::Main;
                                 }
                                 _ => {}
                             }
@@ -443,7 +507,7 @@ fn ui(f: &mut Frame<'_>, model: &mut Model) {
     f.render_widget(to, mid[1]);
     f.render_widget(run, mid[2]);
 
-    // bottom: status and summary or picker
+    // bottom: status, summary, picker or confirm dialog
     match model.screen {
         Screen::Main => {
             let status = Paragraph::new(model.status.clone())
@@ -465,10 +529,29 @@ fn ui(f: &mut Frame<'_>, model: &mut Model) {
                 let mut list = List::new(items).block(
                     Block::default()
                         .borders(Borders::ALL)
-                        .title("Picker - Enter to open, s to select, q to cancel"),
+                        .title("Picker - Enter to open/select file, s to select, q to cancel"),
                 );
                 list = list.style(Style::default());
                 f.render_stateful_widget(list, left[0], &mut picker.state);
+            }
+        }
+        Screen::ConfirmDir => {
+            if let Some(ref d) = model.pending_dir_selection {
+                let msg = format!(
+                    "Directory selected: {} — press (a) all files -> output: {}/xsql, (f) pick individual files, (q) cancel",
+                    d.display(),
+                    d.display()
+                );
+                let par = Paragraph::new(msg).block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title("Confirm directory"),
+                );
+                f.render_widget(par, chunks[2]);
+            } else {
+                let status = Paragraph::new("No directory selected")
+                    .block(Block::default().borders(Borders::ALL).title("Status"));
+                f.render_widget(status, chunks[2]);
             }
         }
     }
