@@ -43,8 +43,7 @@ pub fn diff_v2_schemas(old: &V2Schema, new: &V2Schema) -> V2Diff {
 
     let added_tables: Vec<_> = new_tables
         .difference(&old_tables)
-        .cloned()
-        .map(|n| new_map.get(&n).unwrap().clone())
+        .map(|n| new_map.get(n).unwrap().clone())
         .collect();
     let removed_tables: Vec<_> = old_tables.difference(&new_tables).cloned().collect();
 
@@ -70,8 +69,7 @@ pub fn diff_v2_schemas(old: &V2Schema, new: &V2Schema) -> V2Diff {
 
         let added_cols: Vec<_> = b_names
             .difference(&a_names)
-            .cloned()
-            .map(|n| b_cols.get(&n).unwrap().clone())
+            .map(|n| b_cols.get(n).unwrap().clone())
             .collect();
         let removed_cols: Vec<_> = a_names.difference(&b_names).cloned().collect();
 
