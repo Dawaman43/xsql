@@ -1,0 +1,7 @@
+[package]
+name = "xsql-emitter"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+xsql-ir = { path = "../xsql-ir" }

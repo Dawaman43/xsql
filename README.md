@@ -1,6 +1,6 @@
 # xsql
 
-Convert SQL *schema DDL* (currently `CREATE TABLE ...`) between dialects via a small intermediate representation.
+Convert SQL *schema DDL* between dialects (currently focused on `CREATE TABLE ...`) via a small intermediate representation.
 
 ## What it does (today)
 
@@ -16,6 +16,13 @@ Convert SQL *schema DDL* (currently `CREATE TABLE ...`) between dialects via a s
   - a single `.sql` file → another `.sql` file
   - a whole folder tree of `.sql` files → a destination folder (preserves relative paths)
 - Includes an interactive TUI (`xsql tui`).
+
+## Quickstart
+
+```bash
+cargo build --release
+./target/release/xsql
+```
 
 ## Install / build
 
@@ -61,9 +68,17 @@ xsql tui
 
 - `Tab` / `Shift+Tab` moves between fields
 - `↑/↓` or `←/→` changes dialect when focused on From/To
+- `i` opens input picker, `o` opens output picker
+- `x` swaps from/to dialects, `r` runs conversion
 - `Enter` runs conversion when focused on Run
 - If the output folder doesn't exist, the TUI will ask to create it (`y/n`).
 - `Esc` quits
+
+TUI workflow is designed to be “no typing”:
+
+1. Pick input file or folder
+2. Pick output folder
+3. Press Enter to run
 
 ## Important limitations
 
@@ -75,6 +90,16 @@ This project currently focuses on a *small subset* of SQL needed for schema conv
 - Type mapping is best-effort (unknown types become `TEXT`).
 
 If you want broader coverage (views, inserts, queries, indexes, constraints), the next step is expanding `xsql-ir` and adding emit/parse support accordingly.
+
+## Roadmap (realistic)
+
+- Expand IR to cover more schema features (constraints, indexes)
+- Improve type mapping and defaults across dialects
+- Add more dialects (e.g. MSSQL, BigQuery, Snowflake) as the IR grows
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 

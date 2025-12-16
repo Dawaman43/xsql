@@ -1,0 +1,11 @@
+[workspace]
+members = [
+  "crates/xsql-ir",
+  "crates/xsql-engine",
+  "crates/xsql-parser",
+  "crates/xsql-emitter",
+  "crates/xsql-cli",
+]
+
+resolver = "2"
+

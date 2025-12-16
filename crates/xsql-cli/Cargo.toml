@@ -1,0 +1,15 @@
+[package]
+name = "xsql"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+description = "Convert SQL schema DDL between dialects"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+xsql-ir = { path = "../xsql-ir" }
+xsql-parser = { path = "../xsql-parser" }
+xsql-emitter = { path = "../xsql-emitter" }
+
+ratatui = "0.29"
+crossterm = "0.28"

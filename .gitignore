@@ -1,0 +1,18 @@
+/target/
+**/*.rs.bk
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# TUI artifacts
+nohup.out
