@@ -94,3 +94,9 @@ impl V2Schema {
         }
     }
 }
+
+impl Default for V2Schema {
+    fn default() -> Self {
+        Self::new()
+    }
+}

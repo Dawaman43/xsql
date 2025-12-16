@@ -3,7 +3,7 @@ use xsql_emitter::v2::*;
 use xsql_ir::v2::*;
 
 fn sample_fk_schema() -> V2Schema {
-    let mut m = HashMap::new();
+    let m = HashMap::new();
     V2Schema {
         tables: vec![
             V2Table {

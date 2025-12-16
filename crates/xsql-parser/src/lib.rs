@@ -4,7 +4,6 @@ pub mod sqlite;
 
 /// IR v2: opt-in parse entrypoints (WIP, not all constraints mapped yet)
 pub mod v2 {
-    use super::*;
     use xsql_ir::v2::*;
 
     use sqlparser::ast::*;
@@ -80,7 +79,7 @@ pub mod v2 {
                     {
                         // try to extract size
                         let size = dt
-                            .split(|c: char| !c.is_digit(10))
+                            .split(|c: char| !c.is_ascii_digit())
                             .filter_map(|s| s.parse::<u32>().ok())
                             .next();
                         V2DataType::Varchar(size)
@@ -215,7 +214,7 @@ pub mod v2 {
                         V2DataType::Integer { bits: Some(32) }
                     } else if dt.contains("varchar") {
                         let size = dt
-                            .split(|c: char| !c.is_digit(10))
+                            .split(|c: char| !c.is_ascii_digit())
                             .filter_map(|s| s.parse::<u32>().ok())
                             .next();
                         V2DataType::Varchar(size)
@@ -359,7 +358,7 @@ pub mod v2 {
                         V2DataType::Float
                     } else if dt.contains("varchar") || dt.contains("character varying") {
                         let size = dt
-                            .split(|c: char| !c.is_digit(10))
+                            .split(|c: char| !c.is_ascii_digit())
                             .filter_map(|s| s.parse::<u32>().ok())
                             .next();
                         V2DataType::Varchar(size)

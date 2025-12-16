@@ -1,3 +1,5 @@
+#![allow(clippy::collapsible_if, clippy::redundant_closure, deprecated, dead_code)]
+
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
@@ -271,7 +273,7 @@ pub fn run_tui() -> Result<(), String> {
                         break;
                     }
                     KeyCode::Char('i') | KeyCode::Char('I') => {
-                        let start = model.input.clone().unwrap_or_else(|| find_project_root());
+                        let start = model.input.clone().unwrap_or_else(find_project_root);
                         model.picker =
                             Some(Picker::new_at(nearest_existing_dir(&start), PickKind::File));
                         model.screen = Screen::PickInput;
@@ -280,7 +282,7 @@ pub fn run_tui() -> Result<(), String> {
                         let start = model
                             .output_dir
                             .clone()
-                            .unwrap_or_else(|| find_project_root());
+                            .unwrap_or_else(find_project_root);
                         model.picker =
                             Some(Picker::new_at(nearest_existing_dir(&start), PickKind::Dir));
                         model.screen = Screen::PickOutputDir;
@@ -443,7 +445,7 @@ pub fn run_tui() -> Result<(), String> {
 }
 
 fn ui(f: &mut Frame<'_>, model: &mut Model) {
-    let size = f.size();
+    let size = f.area();
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints(

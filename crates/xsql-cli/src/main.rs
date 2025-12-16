@@ -240,7 +240,7 @@ struct ConvertOptions {
     strict: bool,
 }
 
-fn conversion_warnings(from: Dialect, to: Dialect, schema: &xsql_ir::Schema) -> Vec<String> {
+fn conversion_warnings(_from: Dialect, to: Dialect, schema: &xsql_ir::Schema) -> Vec<String> {
     let mut warnings = Vec::new();
 
     // Always run generic checks; target-specific checks are gated below.
