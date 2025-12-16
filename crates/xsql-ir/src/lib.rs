@@ -35,3 +35,4 @@ pub enum DataType {
 // with existing parsers and emitters while enabling a richer schema representation.
 pub mod alter;
 pub mod v2;
+pub mod v2_diff;

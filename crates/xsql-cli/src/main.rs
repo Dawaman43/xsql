@@ -63,6 +63,23 @@ enum Command {
         /// Dialect to emit (mysql|postgres|sqlite). Defaults to postgres.
         #[arg(long)]
         dialect: Option<String>,
+        /// Fail if any lossy mappings or unsupported features would be emitted
+        #[arg(long)]
+        strict: bool,
+    },
+    /// IR v2: diff two V2 JSON files
+    V2Diff {
+        /// Old V2 JSON file
+        #[arg(value_name = "OLD")]
+        old: PathBuf,
+
+        /// New V2 JSON file
+        #[arg(value_name = "NEW")]
+        new: PathBuf,
+
+        /// Output machine-readable JSON instead of human text
+        #[arg(long)]
+        json: bool,
     },
 }
 
@@ -638,18 +655,91 @@ fn main() {
                 }
             }
         }
-        Some(Command::V2Emit { input, dialect }) => {
+        Some(Command::V2Emit { input, dialect, strict }) => {
             let json = fs::read_to_string(&input).expect("failed to read input");
             let schema: xsql_ir::v2::V2Schema = serde_json::from_str(&json).expect("parse v2 json");
-            let sql = match dialect
+            // determine target dialect string for emitter
+            let target = match dialect
                 .as_deref()
                 .map(|d| Dialect::parse(d).map_err(|e| e.to_string()))
             {
-                Some(Ok(Dialect::Mysql)) => xsql_emitter::v2::emit_mysql_v2(&schema),
-                Some(Ok(Dialect::Sqlite)) => xsql_emitter::v2::emit_sqlite_v2(&schema),
+                Some(Ok(Dialect::Mysql)) => "mysql",
+                Some(Ok(Dialect::Sqlite)) => "sqlite",
+                _ => "postgres",
+            };
+
+            if strict {
+                let warns = xsql_emitter::v2::validate_emit_strict(&schema, target);
+                if !warns.is_empty() {
+                    eprintln!("✖ xsql: strict mode failures (would be lossy):");
+                    for w in warns {
+                        eprintln!("- {}", w);
+                    }
+                    std::process::exit(2);
+                }
+            }
+
+            let sql = match target {
+                "mysql" => xsql_emitter::v2::emit_mysql_v2(&schema),
+                "sqlite" => xsql_emitter::v2::emit_sqlite_v2(&schema),
                 _ => xsql_emitter::v2::emit_postgres_v2(&schema),
             };
+
             println!("{}", sql);
+        }
+        Some(Command::V2Diff { old, new, json }) => {
+            let sold = fs::read_to_string(&old).expect("failed to read old");
+            let snew = fs::read_to_string(&new).expect("failed to read new");
+            let old_schema: xsql_ir::v2::V2Schema = serde_json::from_str(&sold).expect("parse old v2 json");
+            let new_schema: xsql_ir::v2::V2Schema = serde_json::from_str(&snew).expect("parse new v2 json");
+
+            let diff = xsql_ir::v2_diff::diff_v2_schemas(&old_schema, &new_schema);
+
+            if json {
+                let out = serde_json::to_string_pretty(&diff).expect("serialize diff");
+                println!("{}", out);
+            } else {
+                if !diff.added_tables.is_empty() {
+                    println!("Added tables:");
+                    for t in &diff.added_tables {
+                        println!("- {}", t.name);
+                    }
+                }
+                if !diff.removed_tables.is_empty() {
+                    println!("Removed tables:");
+                    for t in &diff.removed_tables {
+                        println!("- {}", t);
+                    }
+                }
+                for tc in &diff.changed_tables {
+                    println!("Table {}:", tc.name);
+                    if !tc.added_columns.is_empty() {
+                        println!("  Added columns:");
+                        for c in &tc.added_columns {
+                            println!("  - {}", c.name);
+                        }
+                    }
+                    if !tc.removed_columns.is_empty() {
+                        println!("  Removed columns:");
+                        for c in &tc.removed_columns {
+                            println!("  - {}", c);
+                        }
+                    }
+                    if !tc.changed_columns.is_empty() {
+                        println!("  Changed columns:");
+                        for c in &tc.changed_columns {
+                            println!("  - {}", c.name);
+                        }
+                    }
+                    if tc.pk_changed {
+                        println!("  Primary key changed");
+                    }
+                }
+
+                if diff.added_tables.is_empty() && diff.removed_tables.is_empty() && diff.changed_tables.is_empty() {
+                    println!("✔ xsql: v2 schemas are equivalent");
+                }
+            }
         }
         None => {
             // Default UX: `xsql` starts the TUI.

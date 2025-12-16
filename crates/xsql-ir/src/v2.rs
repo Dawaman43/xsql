@@ -8,14 +8,14 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct V2Schema {
     pub tables: Vec<V2Table>,
     /// Optional free-form metadata (key/value) for tools.
     pub metadata: HashMap<String, String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct V2Table {
     pub name: String,
     pub columns: Vec<V2Column>,
@@ -24,7 +24,7 @@ pub struct V2Table {
     pub constraints: Vec<Constraint>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct V2Column {
     pub name: String,
     pub data_type: V2DataType,
@@ -36,7 +36,7 @@ pub struct V2Column {
 
 /// A small set of portable data types used by V2. Emitters may map these to
 /// dialect-specific types; parsers map dialect types into these where possible.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum V2DataType {
     Integer {
         bits: Option<u8>,
@@ -52,7 +52,7 @@ pub enum V2DataType {
 }
 
 /// Column-level constraints that are common across dialects.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum ColumnConstraint {
     NotNull,
     Default(String),
@@ -62,7 +62,7 @@ pub enum ColumnConstraint {
 }
 
 /// Table-level constraints and foreign keys.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Constraint {
     Unique {
         name: Option<String>,
@@ -75,7 +75,7 @@ pub enum Constraint {
     },
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ForeignKey {
     pub name: Option<String>,
     pub columns: Vec<String>,

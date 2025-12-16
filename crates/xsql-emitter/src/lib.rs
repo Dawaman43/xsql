@@ -250,4 +250,60 @@ pub mod v2 {
         }
         out
     }
+    /// Validate whether emitting `schema` to `target` would be lossy.
+    /// Returns a list of human-readable warnings describing lossy mappings.
+    pub fn validate_emit_strict(schema: &V2Schema, target: &str) -> Vec<String> {
+        let mut warns = Vec::new();
+        for table in &schema.tables {
+            for col in &table.columns {
+                match target {
+                    "sqlite" => {
+                        // In SQLite many types are emitted as TEXT — mark these as lossy.
+                        match &col.data_type {
+                            V2DataType::Varchar(_) | V2DataType::Text | V2DataType::Timestamp => {
+                                warns.push(format!(
+                                    "{}.{}: type {:?} will be emitted as TEXT in SQLite",
+                                    table.name, col.name, col.data_type
+                                ));
+                            }
+                            V2DataType::Custom(s) => {
+                                warns.push(format!(
+                                    "{}.{}: custom type {} may not be portable",
+                                    table.name, col.name, s
+                                ));
+                            }
+                            _ => {}
+                        }
+                    }
+                    _ => {
+                        // For all targets, flag custom types as potentially lossy.
+                        if let V2DataType::Custom(s) = &col.data_type {
+                            warns.push(format!(
+                                "{}.{}: custom type {} may not be portable",
+                                table.name, col.name, s
+                            ));
+                        }
+                    }
+                }
+                // Also flag CHECK constraints as potentially vendor-specific
+                for c in &col.constraints {
+                    if let ColumnConstraint::Check(expr) = c {
+                        warns.push(format!(
+                            "{}.{}: CHECK ({}) may be vendor-specific",
+                            table.name, col.name, expr
+                        ));
+                    }
+                }
+            }
+            for c in &table.constraints {
+                if let Constraint::Check { name: _, expr } = c {
+                    warns.push(format!(
+                        "{}.{}: table-level CHECK ({}) may be vendor-specific",
+                        table.name, table.name, expr
+                    ));
+                }
+            }
+        }
+        warns
+    }
 }
