@@ -99,13 +99,30 @@ This project currently focuses on a *small subset* of SQL needed for schema conv
 - Many dialect-specific features (indexes, constraints beyond primary keys, foreign keys, check constraints, extensions, etc.) are not yet mapped.
 - Type mapping is best-effort (unknown types become `TEXT`).
 
-If you want broader coverage (views, inserts, queries, indexes, constraints), the next step is expanding `xsql-ir` and adding emit/parse support accordingly.
+Install and run quickly (recommended):
 
 ## Roadmap (realistic)
+# one-line installer (clones, builds, installs xsql)
 
 - Expand IR to cover more schema features (constraints, indexes)
 - Improve type mapping and defaults across dialects
 - Add more dialects (e.g. MSSQL, BigQuery, Snowflake) as the IR grows
+```
+
+Installer notes
+
+- The installer runs a quiet build and shows a small spinner animation while compiling.
+- It will first try to move the installed `xsql` binary into `/usr/local/bin` (this may prompt for `sudo`) so the tool is immediately available system-wide.
+- If moving to `/usr/local/bin` is not possible, the installer adds `$HOME/.cargo/bin` to your shell RC (prefers `~/.zshrc`, then `~/.bashrc`, then `~/.profile`) so `xsql` will be available in future sessions.
+- If the installer cannot move the binary, you can make it available immediately in your current shell by running:
+
+```bash
+export PATH="$HOME/.cargo/bin:$PATH"
+# or source the updated rc, e.g.:
+source ~/.zshrc
+```
+
+Do not run the curl+sh command with `sudo` — the installer handles any required privilege escalation when moving the binary to `/usr/local/bin`.
 
 ## Contributing
 
