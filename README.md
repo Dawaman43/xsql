@@ -18,19 +18,27 @@ Convert SQL *schema DDL* between dialects (currently focused on `CREATE TABLE ..
 - Includes an interactive TUI (`xsql tui`).
 
 ## Quickstart
+Install and run quickly (recommended):
+
+```bash
+# one-line install (clones, builds, installs to $HOME/.cargo/bin)
+curl -fsSL https://raw.githubusercontent.com/Dawaman43/xsql/main/install.sh | sh
+
+# then run the tool
+xsql --help
+```
+
+## Build from source
+
+If you prefer to build locally:
 
 ```bash
 cargo build --release
-./target/release/xsql
 ```
 
-## Install / build
+The development binary will be at `target/release/xsql`.
 
-```bash
-cargo build --release
-```
-
-Binary will be at `target/release/xsql`.
+There is also an installer script at `install.sh` in this repo; the curl one-liner above runs it.
 
 ## CLI usage
 
@@ -51,6 +59,8 @@ xsql tui
 ```bash
 xsql --from mysql --to postgres --input schema.sql --output schema.pg.sql
 ```
+
+If you installed via the one-liner the binary will be available as `xsql` in your shell.
 
 ### Convert a folder (recursive)
 
