@@ -79,6 +79,79 @@ fn emit_schema(to: Dialect, schema: &xsql_ir::Schema) -> String {
     }
 }
 
+pub(crate) fn plan_conversion(
+    from: Dialect,
+    to: Dialect,
+    input: &Path,
+    output_dir: &Path,
+) -> Result<Vec<(PathBuf, PathBuf)>, String> {
+    let mut mappings = Vec::new();
+
+    if input.is_dir() {
+        if !input.is_dir() {
+            return Err(format!("input is not a directory: {}", input.display()));
+        }
+
+        for entry in fs::read_dir(input)
+            .map_err(|e| format!("failed to read dir {}: {e}", input.display()))?
+        {
+            let entry = entry.map_err(|e| e.to_string())?;
+            let path = entry.path();
+            if path.is_dir() {
+                // Recurse into subdirectories
+                let sub = plan_conversion(from, to, &path, output_dir)?;
+                mappings.extend(sub);
+                continue;
+            }
+
+            if !is_sql_file(&path) {
+                continue;
+            }
+
+            // Validate parse
+            let sql = fs::read_to_string(&path)
+                .map_err(|e| format!("failed to read {}: {e}", path.display()))?;
+            parse_schema(from, &sql)
+                .map_err(|e| format!("failed to parse {}: {e}", path.display()))?;
+
+            let rel = path.strip_prefix(input).map_err(|e| e.to_string())?;
+            let out_path = output_dir.join(rel);
+            mappings.push((path, out_path));
+        }
+    } else {
+        if !input.exists() {
+            return Err(format!("input does not exist: {}", input.display()));
+        }
+
+        if !is_sql_file(input) {
+            // still try to parse single file
+        }
+
+        let sql = fs::read_to_string(input)
+            .map_err(|e| format!("failed to read {}: {e}", input.display()))?;
+        parse_schema(from, &sql)
+            .map_err(|e| format!("failed to parse {}: {e}", input.display()))?;
+
+        let stem = input
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("schema");
+        let out = output_dir.join(format!(
+            "{}.{}.sql",
+            stem,
+            match to {
+                Dialect::Mysql => "mysql",
+                Dialect::Postgres => "postgres",
+                Dialect::Sqlite => "sqlite",
+            }
+        ));
+
+        mappings.push((input.to_path_buf(), out));
+    }
+
+    Ok(mappings)
+}
+
 fn ensure_parent_dir(path: &Path) -> Result<(), String> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).map_err(|e| format!("failed to create output dir: {e}"))?;
