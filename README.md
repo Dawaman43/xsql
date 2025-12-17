@@ -1,8 +1,8 @@
 # xsql
 
-Convert SQL *schema DDL* between dialects (currently focused on `CREATE TABLE ...`) via a small intermediate representation.
+Convert SQL schema DDL between dialects using a compact intermediate representation.
 
-One-line positioning: a lightweight CLI/TUI to parse, diff and emit SQL schema DDL across MySQL/Postgres/SQLite using an experimental IR v2.
+xsql is a lightweight CLI and TUI that parses, diffs, and emits SQL schema DDL for MySQL, PostgreSQL, and SQLite. It relies on an experimental IR v2 to improve portability, enable round-tripping and linting, and to pave the way for future ALTER-statement generation.
 
 ## What it does (today)
 
