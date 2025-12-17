@@ -2,6 +2,8 @@
 
 Convert SQL *schema DDL* between dialects (currently focused on `CREATE TABLE ...`) via a small intermediate representation.
 
+One-line positioning: a lightweight CLI/TUI to parse, diff and emit SQL schema DDL across MySQL/Postgres/SQLite using an experimental IR v2.
+
 ## What it does (today)
 
 - Parses schema DDL from:
@@ -78,6 +80,12 @@ xsql v2-parse schema.sql --dialect postgres > schema.v2.json
 
 # Emit MySQL SQL from a V2 JSON file
 xsql v2-emit schema.v2.json --dialect mysql > schema.mysql.sql
+
+# Diff two V2 JSON files (human output)
+xsql v2-diff old.v2.json new.v2.json
+
+# Diff two V2 JSON files (machine JSON output)
+xsql v2-diff old.v2.json new.v2.json --json > diff.json
 ```
 
 Notes and limitations:
@@ -114,6 +122,34 @@ cargo build --release --manifest-path crates/xsql-cli/Cargo.toml
 The development binary will be at `crates/xsql-cli/target/release/xsql` (or in the workspace `target/release`).
 
 There is also an installer script at `install.sh` in this repo; the curl one-liner above runs it.
+
+## CI snippet (example)
+
+Use `v2-parse`/`v2-emit` in CI to validate schema round-trips and detect portability issues. Example GitHub Actions step:
+
+```yaml
+- name: Validate schema roundtrip
+  uses: actions/checkout@v4
+
+- name: Setup Rust
+  uses: actions-rs/toolchain@v1
+  with:
+    toolchain: stable
+
+- name: Build xsql
+  run: cargo build --release --manifest-path crates/xsql-cli/Cargo.toml
+
+- name: Parse and emit (roundtrip)
+  run: |
+    ./target/release/xsql v2-parse examples/postgres.sql --dialect postgres > /tmp/schema.v2.json
+    ./target/release/xsql v2-emit /tmp/schema.v2.json --dialect mysql > /tmp/schema.mysql.sql
+
+- name: Compute v2 diff
+  run: |
+    ./target/release/xsql v2-parse examples/postgres.sql --dialect postgres > /tmp/old.v2.json
+    ./target/release/xsql v2-parse examples/mysql.sql --dialect mysql > /tmp/new.v2.json
+    ./target/release/xsql v2-diff /tmp/old.v2.json /tmp/new.v2.json --json > /tmp/diff.json
+```
 
 ## Installer notes
 
