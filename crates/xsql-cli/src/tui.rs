@@ -218,7 +218,7 @@ fn fuzzy_score(pat: &str, text: &str) -> Option<isize> {
         return Some(0);
     }
 
-    let mut t_chars: Vec<char> = text.chars().collect();
+    let t_chars: Vec<char> = text.chars().collect();
     let p_chars: Vec<char> = pat.chars().collect();
 
     let mut ti = 0usize;
