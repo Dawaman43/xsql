@@ -107,6 +107,32 @@ impl Picker {
         }
     }
 
+    fn page_up(&mut self) {
+        let i = self.state.selected().unwrap_or(0);
+        let step = 10usize;
+        let new = i.saturating_sub(step);
+        self.state.select(Some(new));
+    }
+
+    fn page_down(&mut self) {
+        let i = self.state.selected().unwrap_or(0);
+        let step = 10usize;
+        let new = std::cmp::min(i + step, self.items.len().saturating_sub(1));
+        self.state.select(Some(new));
+    }
+
+    fn select_first(&mut self) {
+        if !self.items.is_empty() {
+            self.state.select(Some(0));
+        }
+    }
+
+    fn select_last(&mut self) {
+        if !self.items.is_empty() {
+            self.state.select(Some(self.items.len() - 1));
+        }
+    }
+
     fn enter(&mut self) {
         if let Some(idx) = self.state.selected() {
             if let Some(p) = self.items.get(idx) {
@@ -347,7 +373,11 @@ pub fn run_tui() -> Result<(), String> {
                                 }
                                 KeyCode::Up => picker.move_up(),
                                 KeyCode::Down => picker.move_down(),
-                                KeyCode::Left => picker.go_parent(),
+                                KeyCode::PageUp => picker.page_up(),
+                                KeyCode::PageDown => picker.page_down(),
+                                KeyCode::Home => picker.select_first(),
+                                KeyCode::End => picker.select_last(),
+                                KeyCode::Backspace | KeyCode::Left => picker.go_parent(),
                                 KeyCode::Right | KeyCode::Enter => {
                                     // If selected is a file and picking files, accept it on Enter
                                     if let Some(idx) = picker.state.selected() {
