@@ -423,26 +423,28 @@ pub fn run_tui() -> Result<(), String> {
                     {
                         if let Event::Key(k) = event::read().map_err(|e| e.to_string())? {
                             match k.code {
-                                        KeyCode::Char('q') | KeyCode::Esc if !picker.searching => {
-                                            model.picker = None;
-                                            model.screen = Screen::Main;
-                                        }
-                                        KeyCode::Up => picker.move_up(),
-                                        KeyCode::Down => picker.move_down(),
-                                        KeyCode::PageUp => picker.page_up(),
-                                        KeyCode::PageDown => picker.page_down(),
-                                        KeyCode::Home => picker.select_first(),
-                                        KeyCode::End => picker.select_last(),
-                                        KeyCode::Backspace | KeyCode::Left if !picker.searching => picker.go_parent(),
-                                        KeyCode::Char('/') => {
-                                            picker.start_search();
-                                        }
-                                        KeyCode::Char(c) if picker.searching => {
-                                            picker.append_query(c);
-                                        }
-                                        KeyCode::Backspace if picker.searching => picker.pop_query(),
-                                        KeyCode::Esc if picker.searching => picker.stop_search(),
-                                        KeyCode::Right | KeyCode::Enter => {
+                                KeyCode::Char('q') | KeyCode::Esc if !picker.searching => {
+                                    model.picker = None;
+                                    model.screen = Screen::Main;
+                                }
+                                KeyCode::Up => picker.move_up(),
+                                KeyCode::Down => picker.move_down(),
+                                KeyCode::PageUp => picker.page_up(),
+                                KeyCode::PageDown => picker.page_down(),
+                                KeyCode::Home => picker.select_first(),
+                                KeyCode::End => picker.select_last(),
+                                KeyCode::Backspace | KeyCode::Left if !picker.searching => {
+                                    picker.go_parent()
+                                }
+                                KeyCode::Char('/') => {
+                                    picker.start_search();
+                                }
+                                KeyCode::Char(c) if picker.searching => {
+                                    picker.append_query(c);
+                                }
+                                KeyCode::Backspace if picker.searching => picker.pop_query(),
+                                KeyCode::Esc if picker.searching => picker.stop_search(),
+                                KeyCode::Right | KeyCode::Enter => {
                                     // If selected is a file and picking files, accept it on Enter
                                     if let Some(idx) = picker.state.selected() {
                                         if let Some(p) = picker.items.get(idx) {
@@ -620,14 +622,15 @@ fn ui(f: &mut Frame<'_>, model: &mut Model) {
                     .split(chunks[2]);
 
                 let hint = if picker.searching {
-                    format!("Search: {} (type to filter, Backspace to erase, Esc to exit)", picker.query)
+                    format!(
+                        "Search: {} (type to filter, Backspace to erase, Esc to exit)",
+                        picker.query
+                    )
                 } else {
                     "Picker - / search, Enter open/select, s select, q cancel".to_string()
                 };
 
-                let hint_par = Paragraph::new(hint).block(
-                    Block::default().borders(Borders::NONE),
-                );
+                let hint_par = Paragraph::new(hint).block(Block::default().borders(Borders::NONE));
                 f.render_widget(hint_par, areas[0]);
 
                 let items: Vec<ListItem> = picker
@@ -635,11 +638,10 @@ fn ui(f: &mut Frame<'_>, model: &mut Model) {
                     .iter()
                     .map(|p| ListItem::new(p.file_name().and_then(|s| s.to_str()).unwrap_or("?")))
                     .collect();
-                let mut list = List::new(items).block(
-                    Block::default()
-                        .borders(Borders::ALL)
-                        .title("Files/Dirs - Use arrows, PgUp/PgDn, Home/End, Backspace to parent"),
-                );
+                let mut list =
+                    List::new(items).block(Block::default().borders(Borders::ALL).title(
+                        "Files/Dirs - Use arrows, PgUp/PgDn, Home/End, Backspace to parent",
+                    ));
                 list = list.style(Style::default());
                 f.render_stateful_widget(list, areas[1], &mut picker.state);
             }
