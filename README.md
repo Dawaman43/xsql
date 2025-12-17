@@ -208,6 +208,23 @@ xsql tui
 - If the output folder doesn't exist, the TUI will ask to create it (`y/n`).
 - `Esc` quits
 
+### TUI keybindings
+
+While the TUI is open, these keys are available:
+
+- Navigation: `Up` / `Down` (move selection)
+- Fast navigation: `PageUp` / `PageDown`, `Home` / `End`
+- Parent directory: `Left` or `Backspace`
+- Open / enter directory: `Right` or `Enter`
+- Select item: `s` (select file or directory)
+- Start search/filter: `/` (then type to filter results)
+  - While searching: typing adds to the query, `Backspace` removes a character, `Esc` exits search
+- Confirm directory selection: when prompted after selecting a directory press `a` to select all files or `f` to pick individual files
+- Toggling: `d` toggles dry-run, `x` swaps `from`/`to` dialects, `r` runs conversion
+- Quick pickers: `i` open input picker, `o` open output picker
+
+Hints are shown at the top of the picker when active.
+
 TUI workflow is designed to be “no typing”:
 
 1. Pick input file or folder

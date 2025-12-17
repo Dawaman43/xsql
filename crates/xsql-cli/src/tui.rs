@@ -48,18 +48,24 @@ enum PickKind {
 
 struct Picker {
     cwd: PathBuf,
+    all_items: Vec<PathBuf>,
     items: Vec<PathBuf>,
     state: ListState,
     kind: PickKind,
+    query: String,
+    searching: bool,
 }
 
 impl Picker {
     fn new_at(start: PathBuf, kind: PickKind) -> Self {
         let mut p = Picker {
             cwd: start,
+            all_items: Vec::new(),
             items: Vec::new(),
             state: ListState::default(),
             kind,
+            query: String::new(),
+            searching: false,
         };
         p.refresh();
         p
@@ -73,7 +79,8 @@ impl Picker {
             }
         }
         entries.sort_by_key(|p| (p.is_file(), p.file_name().map(|s| s.to_os_string())));
-        self.items = entries;
+        self.all_items = entries;
+        self.apply_filter();
         if !self.items.is_empty() {
             self.state.select(Some(0));
         } else {
@@ -103,6 +110,8 @@ impl Picker {
     fn go_parent(&mut self) {
         if let Some(parent) = self.cwd.parent() {
             self.cwd = parent.to_path_buf();
+            self.query.clear();
+            self.searching = false;
             self.refresh();
         }
     }
@@ -138,6 +147,8 @@ impl Picker {
             if let Some(p) = self.items.get(idx) {
                 if p.is_dir() {
                     self.cwd = p.clone();
+                    self.query.clear();
+                    self.searching = false;
                     self.refresh();
                 }
             }
@@ -149,6 +160,51 @@ impl Picker {
             Some(i) => self.items.get(i).cloned(),
             None => None,
         }
+    }
+
+    fn apply_filter(&mut self) {
+        if self.query.is_empty() {
+            self.items = self.all_items.clone();
+        } else {
+            let q = self.query.to_lowercase();
+            self.items = self
+                .all_items
+                .iter()
+                .filter(|p| {
+                    p.file_name()
+                        .and_then(|s| s.to_str())
+                        .map(|n| n.to_lowercase().contains(&q))
+                        .unwrap_or(false)
+                })
+                .cloned()
+                .collect();
+        }
+        if !self.items.is_empty() {
+            self.state.select(Some(0));
+        } else {
+            self.state.select(None);
+        }
+    }
+
+    fn start_search(&mut self) {
+        self.searching = true;
+        self.query.clear();
+    }
+
+    fn stop_search(&mut self) {
+        self.searching = false;
+        self.query.clear();
+        self.apply_filter();
+    }
+
+    fn append_query(&mut self, ch: char) {
+        self.query.push(ch);
+        self.apply_filter();
+    }
+
+    fn pop_query(&mut self) {
+        self.query.pop();
+        self.apply_filter();
     }
 }
 
@@ -367,18 +423,26 @@ pub fn run_tui() -> Result<(), String> {
                     {
                         if let Event::Key(k) = event::read().map_err(|e| e.to_string())? {
                             match k.code {
-                                KeyCode::Char('q') | KeyCode::Esc => {
-                                    model.picker = None;
-                                    model.screen = Screen::Main;
-                                }
-                                KeyCode::Up => picker.move_up(),
-                                KeyCode::Down => picker.move_down(),
-                                KeyCode::PageUp => picker.page_up(),
-                                KeyCode::PageDown => picker.page_down(),
-                                KeyCode::Home => picker.select_first(),
-                                KeyCode::End => picker.select_last(),
-                                KeyCode::Backspace | KeyCode::Left => picker.go_parent(),
-                                KeyCode::Right | KeyCode::Enter => {
+                                        KeyCode::Char('q') | KeyCode::Esc if !picker.searching => {
+                                            model.picker = None;
+                                            model.screen = Screen::Main;
+                                        }
+                                        KeyCode::Up => picker.move_up(),
+                                        KeyCode::Down => picker.move_down(),
+                                        KeyCode::PageUp => picker.page_up(),
+                                        KeyCode::PageDown => picker.page_down(),
+                                        KeyCode::Home => picker.select_first(),
+                                        KeyCode::End => picker.select_last(),
+                                        KeyCode::Backspace | KeyCode::Left if !picker.searching => picker.go_parent(),
+                                        KeyCode::Char('/') => {
+                                            picker.start_search();
+                                        }
+                                        KeyCode::Char(c) if picker.searching => {
+                                            picker.append_query(c);
+                                        }
+                                        KeyCode::Backspace if picker.searching => picker.pop_query(),
+                                        KeyCode::Esc if picker.searching => picker.stop_search(),
+                                        KeyCode::Right | KeyCode::Enter => {
                                     // If selected is a file and picking files, accept it on Enter
                                     if let Some(idx) = picker.state.selected() {
                                         if let Some(p) = picker.items.get(idx) {
@@ -550,10 +614,21 @@ fn ui(f: &mut Frame<'_>, model: &mut Model) {
         }
         Screen::PickInput | Screen::PickOutputDir => {
             if let Some(ref mut picker) = model.picker {
-                let left = Layout::default()
-                    .direction(Direction::Horizontal)
-                    .constraints([Constraint::Percentage(100)].as_ref())
+                let areas = Layout::default()
+                    .direction(Direction::Vertical)
+                    .constraints([Constraint::Length(1), Constraint::Min(3)].as_ref())
                     .split(chunks[2]);
+
+                let hint = if picker.searching {
+                    format!("Search: {} (type to filter, Backspace to erase, Esc to exit)", picker.query)
+                } else {
+                    "Picker - / search, Enter open/select, s select, q cancel".to_string()
+                };
+
+                let hint_par = Paragraph::new(hint).block(
+                    Block::default().borders(Borders::NONE),
+                );
+                f.render_widget(hint_par, areas[0]);
 
                 let items: Vec<ListItem> = picker
                     .items
@@ -563,10 +638,10 @@ fn ui(f: &mut Frame<'_>, model: &mut Model) {
                 let mut list = List::new(items).block(
                     Block::default()
                         .borders(Borders::ALL)
-                        .title("Picker - Enter to open/select file, s to select, q to cancel"),
+                        .title("Files/Dirs - Use arrows, PgUp/PgDn, Home/End, Backspace to parent"),
                 );
                 list = list.style(Style::default());
-                f.render_stateful_widget(list, left[0], &mut picker.state);
+                f.render_stateful_widget(list, areas[1], &mut picker.state);
             }
         }
         Screen::ConfirmDir => {
