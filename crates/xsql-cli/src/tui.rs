@@ -167,17 +167,20 @@ impl Picker {
             self.items = self.all_items.clone();
         } else {
             let q = self.query.to_lowercase();
-            self.items = self
+            // Compute fuzzy scores for each candidate and sort by score desc.
+            let mut scored: Vec<(isize, PathBuf)> = self
                 .all_items
                 .iter()
-                .filter(|p| {
-                    p.file_name()
-                        .and_then(|s| s.to_str())
-                        .map(|n| n.to_lowercase().contains(&q))
-                        .unwrap_or(false)
+                .filter_map(|p| {
+                    p.file_name().and_then(|s| s.to_str()).and_then(|name| {
+                        Self::fuzzy_score(&q, &name.to_lowercase()).map(|sc| (sc, p.clone()))
+                    })
                 })
-                .cloned()
                 .collect();
+
+            // sort by score desc
+            scored.sort_by(|a, b| b.0.cmp(&a.0));
+            self.items = scored.into_iter().map(|(_, p)| p).collect();
         }
         if !self.items.is_empty() {
             self.state.select(Some(0));
@@ -206,6 +209,49 @@ impl Picker {
         self.query.pop();
         self.apply_filter();
     }
+
+/// Simple fuzzy subsequence scorer.
+/// Returns Some(score) if `pat` is a subsequence of `text`, else None.
+/// Higher score is better. Score biases short spans and contiguous matches.
+fn fuzzy_score(pat: &str, text: &str) -> Option<isize> {
+    if pat.is_empty() {
+        return Some(0);
+    }
+
+    let mut t_chars: Vec<char> = text.chars().collect();
+    let p_chars: Vec<char> = pat.chars().collect();
+
+    let mut ti = 0usize;
+    let mut positions: Vec<usize> = Vec::with_capacity(p_chars.len());
+
+    for &pc in &p_chars {
+        let mut found = false;
+        while ti < t_chars.len() {
+            if t_chars[ti] == pc {
+                positions.push(ti);
+                ti += 1;
+                found = true;
+                break;
+            }
+            ti += 1;
+        }
+        if !found {
+            return None;
+        }
+    }
+
+    // score: longer contiguous runs are better; smaller span is better
+    let span = positions.last().unwrap() - positions.first().unwrap() + 1;
+    let contiguous_bonus = positions
+        .windows(2)
+        .filter(|w| w[1] == w[0] + 1)
+        .count() as isize;
+
+    let base = (p_chars.len() as isize) * 100;
+    let span_penalty = span as isize;
+
+    Some(base + contiguous_bonus * 20 - span_penalty)
+}
 }
 
 struct Model {
